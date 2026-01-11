@@ -1,0 +1,24 @@
+src/
+ ├─ app/
+ │   ├─ Application.cpp        // boot → mode → sleep
+ │   ├─ ModeManual.cpp         // Button-Wake
+ │   └─ ModeSmarthome.cpp      // Timer-Wake
+ │
+ ├─ core/
+ │   ├─ PowerManager.cpp       // 5V, Sleep, Reihenfolge
+ │   ├─ BatteryMonitor.cpp     // ADC, Filter, Schutz
+ │   └─ WakeReason.cpp         // GPIO / Timer
+ │
+ ├─ sensors/
+ │   ├─ Pms5003.cpp            // Power + UART + Parsing
+ │   ├─ Aht20.cpp
+ │   └─ Bmp280.cpp
+ │
+ ├─ ui/
+ │   └─ OledDisplay.cpp        // nur im Manual Mode
+ │
+ ├─ net/
+ │   └─ MqttClient.cpp         // nur im Smarthome Mode
+ │
+ ├─ BoardConfig.h              // (haben wir schon)
+ └─ main.cpp                   // extrem klein

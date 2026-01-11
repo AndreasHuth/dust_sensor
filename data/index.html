@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feinstaub Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f4f4f9; color: #333; }
+        .container { max-width: 800px; margin: auto; padding: 20px; }
+        .grid { display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 45%; }
+        .value { font-size: 2em; font-weight: bold; color: #007bff; }
+        .unit { font-size: 0.5em; color: #777; }
+        canvas { background: white; border-radius: 10px; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .status { margin-top: 10px; font-size: 0.8em; color: green; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Luft-Monitor Live</h1>
+        
+        <div class="grid">
+            <div class="card">
+                <div>PM 2.5</div>
+                <div class="value" id="pm25">-- <span class="unit">µg/m³</span></div>
+            </div>
+            <div class="card">
+                <div>Batterie</div>
+                <div class="value" id="vbat">-- <span class="unit">V</span></div>
+            </div>
+        </div>
+
+        <canvas id="airChart"></canvas>
+        <div class="status" id="ws-status">Verbinde WebSocket...</div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('airChart').getContext('2d');
+        const pmData = [];
+        const labels = [];
+        
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Feinstaub PM 2.5',
+                    data: pmData,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // WebSocket Verbindung (Port 81 laut deiner wifiRC.cpp)
+        const gateway = `ws://${window.location.hostname}:81/`;
+        let socket;
+
+        function initWebSocket() {
+            socket = new WebSocket(gateway);
+            socket.onopen = () => document.getElementById('ws-status').innerText = "Verbunden";
+            socket.onclose = () => {
+                document.getElementById('ws-status').innerText = "Getrennt - Reconnect...";
+                setTimeout(initWebSocket, 2000);
+            };
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                // Werte in Kacheln aktualisieren
+                document.getElementById('pm25').innerHTML = `${data.pm25} <span class="unit">µg/m³</span>`;
+                document.getElementById('vbat').innerHTML = `${data.vbat.toFixed(2)} <span class="unit">V</span>`;
+
+                // Chart aktualisieren
+                const now = new Date().toLocaleTimeString();
+                labels.push(now);
+                pmData.push(data.pm25);
+
+                if (labels.length > 20) { // Max 20 Datenpunkte anzeigen
+                    labels.shift();
+                    pmData.shift();
+                }
+                chart.update();
+            };
+        }
+
+        window.onload = initWebSocket;
+    </script>
+</body>
+</html>
